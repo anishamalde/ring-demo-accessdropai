@@ -3,7 +3,7 @@ import * as tf from '@tensorflow/tfjs';
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
 import { startWhepSession, closeWhepSession } from './api';
 
-const DETECT_INTERVAL_MS = 1000; // run detection every second
+const DETECT_INTERVAL_MS = 2000; // run detection every 2 seconds (reduces main thread load)
 const MAX_RECONNECT_ATTEMPTS = 3;
 const RECONNECT_DELAY_MS = 2000;
 

@@ -34,6 +34,7 @@ export default function AccessDropScreen({ deviceId, accessToken, onBack, onLog 
   const lastPersonCountRef = useRef(0);
   const phaseRef = useRef(phase);
   const audioTrackRef = useRef(null);
+  const transcribingRef = useRef(false);
 
   // --- Mock message playback with realistic timing ---
   useEffect(() => {
@@ -110,10 +111,13 @@ export default function AccessDropScreen({ deviceId, accessToken, onBack, onLog 
   // --- Start transcription from the WHEP audio track ---
   const tryStartTranscription = useCallback(() => {
     if (deliveryState.useMockData) return;
+    if (transcribingRef.current) return;
+    if (phaseRef.current !== 'active') return;
     if (!audioTrackRef.current) {
       if (onLog) onLog('No audio track available yet - transcription will start when stream connects');
       return;
     }
+    transcribingRef.current = true;
     try {
       startTranscription(
         audioTrackRef.current,
@@ -133,6 +137,7 @@ export default function AccessDropScreen({ deviceId, accessToken, onBack, onLog 
         },
         (err) => {
           console.warn('[AccessDropScreen] Transcription failed, falling back to mock mode:', err.message);
+          transcribingRef.current = false;
           stopTranscription();
           dispatch({ type: 'SET_MOCK_MODE', useMock: true });
           if (onLog) onLog('Transcription unavailable - switched to mock mode');
@@ -141,6 +146,7 @@ export default function AccessDropScreen({ deviceId, accessToken, onBack, onLog 
       if (onLog) onLog('Transcription started from WHEP audio');
     } catch (err) {
       console.warn('[AccessDropScreen] Could not start transcription:', err.message);
+      transcribingRef.current = false;
       dispatch({ type: 'SET_MOCK_MODE', useMock: true });
       if (onLog) onLog('Transcription unavailable - switched to mock mode');
     }
@@ -148,12 +154,15 @@ export default function AccessDropScreen({ deviceId, accessToken, onBack, onLog 
 
   // --- Audio track handler from PersonDetector ---
   const handleAudioTrack = useCallback((track) => {
+    const hadPreviousTrack = audioTrackRef.current !== null;
     audioTrackRef.current = track;
     if (onLog) onLog('Audio track received from WHEP stream');
-    // If delivery is already active, start transcription now
-    if (phaseRef.current === 'active') {
-      tryStartTranscription();
+    // If we had a previous track (reconnect scenario), restart transcription
+    if (hadPreviousTrack && transcribingRef.current) {
+      stopTranscription();
+      transcribingRef.current = false;
     }
+    tryStartTranscription();
   }, [onLog, tryStartTranscription]);
 
   // --- Cleanup debounce timer on phase change or unmount ---
@@ -203,6 +212,7 @@ export default function AccessDropScreen({ deviceId, accessToken, onBack, onLog 
   const handleReset = useCallback(() => {
     stop();
     stopTranscription();
+    transcribingRef.current = false;
     mockTimeoutsRef.current.forEach(clearTimeout);
     mockTimeoutsRef.current = [];
     if (debounceTimerRef.current !== null) {
