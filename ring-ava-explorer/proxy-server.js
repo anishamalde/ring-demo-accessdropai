@@ -1,5 +1,11 @@
 import express from 'express';
 import cors from 'cors';
+import { PollyClient, SynthesizeSpeechCommand } from '@aws-sdk/client-polly';
+import { WebSocketServer } from 'ws';
+import {
+  TranscribeStreamingClient,
+  StartStreamTranscriptionCommand,
+} from '@aws-sdk/client-transcribe-streaming';
 
 const app = express();
 const PORT = 3001;
@@ -20,6 +26,39 @@ app.use((req, res, next) => {
     req.on('end', () => { req.body = body; next(); });
   } else {
     express.json()(req, res, next);
+  }
+});
+
+// AccessDrop AI: Text-to-Speech via Amazon Polly
+const pollyClient = new PollyClient({});
+
+app.post('/api/accessdrop/tts', async (req, res) => {
+  const { text, voiceId } = req.body || {};
+
+  if (!text) {
+    return res.status(400).json({ error: 'Missing required field', detail: '"text" is required' });
+  }
+
+  try {
+    const command = new SynthesizeSpeechCommand({
+      Text: text,
+      OutputFormat: 'mp3',
+      VoiceId: voiceId || 'Joanna',
+      Engine: 'neural',
+    });
+
+    const response = await pollyClient.send(command);
+    const chunks = [];
+    for await (const chunk of response.AudioStream) {
+      chunks.push(chunk);
+    }
+    const audioBuffer = Buffer.concat(chunks);
+
+    res.set('Content-Type', 'audio/mpeg');
+    res.send(audioBuffer);
+  } catch (err) {
+    console.error('Polly TTS error:', err.message);
+    res.status(502).json({ error: 'Polly TTS failed', detail: err.message });
   }
 });
 
@@ -99,8 +138,113 @@ app.all('/oauth/*', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Ring AVA proxy running on http://localhost:${PORT}`);
   console.log(`  API proxy:   http://localhost:${PORT}/api/v1/...`);
   console.log(`  OAuth proxy: http://localhost:${PORT}/oauth/...`);
+  console.log(`  Transcribe WS: ws://localhost:${PORT}/ws/transcribe`);
+});
+
+// --- WebSocket: /ws/transcribe ---
+const wss = new WebSocketServer({ server, path: '/ws/transcribe' });
+
+wss.on('connection', (ws) => {
+  console.log('[transcribe] Client connected');
+
+  const transcribeClient = new TranscribeStreamingClient({});
+
+  // Collect incoming PCM chunks from the browser in a queue.
+  // The async generator below yields them to the Transcribe SDK.
+  const audioQueue = [];
+  let audioResolve = null;
+  let streamClosed = false;
+
+  function pushAudio(chunk) {
+    if (audioResolve) {
+      const resolve = audioResolve;
+      audioResolve = null;
+      resolve(chunk);
+    } else {
+      audioQueue.push(chunk);
+    }
+  }
+
+  function nextAudio() {
+    if (audioQueue.length > 0) {
+      return Promise.resolve(audioQueue.shift());
+    }
+    if (streamClosed) return Promise.resolve(null);
+    return new Promise((resolve) => { audioResolve = resolve; });
+  }
+
+  async function* audioStream() {
+    while (true) {
+      const chunk = await nextAudio();
+      if (chunk === null) return;
+      yield { AudioEvent: { AudioChunk: chunk } };
+    }
+  }
+
+  // Start the Transcribe streaming session.
+  (async () => {
+    try {
+      const command = new StartStreamTranscriptionCommand({
+        LanguageCode: 'en-US',
+        MediaEncoding: 'pcm',
+        MediaSampleRateHertz: 16000,
+        AudioStream: audioStream(),
+      });
+
+      const response = await transcribeClient.send(command);
+
+      for await (const event of response.TranscriptResultStream) {
+        if (event.TranscriptEvent) {
+          const results = event.TranscriptEvent.Transcript?.Results || [];
+          for (const result of results) {
+            const alt = result.Alternatives?.[0];
+            if (alt && alt.Transcript) {
+              const msg = JSON.stringify({
+                type: 'transcript',
+                text: alt.Transcript,
+                isFinal: !result.IsPartial,
+                timestamp: Date.now(),
+              });
+              if (ws.readyState === ws.OPEN) ws.send(msg);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[transcribe] Transcribe error:', err.message);
+      const errMsg = JSON.stringify({ type: 'error', message: err.message });
+      if (ws.readyState === ws.OPEN) ws.send(errMsg);
+    }
+  })();
+
+  ws.on('message', (data) => {
+    // Binary PCM frames from the browser.
+    if (data instanceof Buffer || data instanceof ArrayBuffer) {
+      const buf = data instanceof ArrayBuffer ? Buffer.from(data) : data;
+      pushAudio(new Uint8Array(buf));
+    }
+  });
+
+  ws.on('close', () => {
+    console.log('[transcribe] Client disconnected');
+    streamClosed = true;
+    // Unblock the generator if it's waiting.
+    if (audioResolve) {
+      audioResolve(null);
+      audioResolve = null;
+    }
+  });
+
+  ws.on('error', (err) => {
+    console.error('[transcribe] WebSocket error:', err.message);
+    streamClosed = true;
+    if (audioResolve) {
+      audioResolve(null);
+      audioResolve = null;
+    }
+  });
 });

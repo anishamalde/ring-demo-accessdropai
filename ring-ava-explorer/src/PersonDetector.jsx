@@ -1,20 +1,19 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import * as tf from '@tensorflow/tfjs';
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { startWhepSession, closeWhepSession } from './api';
 
-const MAX_HISTORY = 60; // keep last 60 data points
 const DETECT_INTERVAL_MS = 1000; // run detection every second
+const MAX_RECONNECT_ATTEMPTS = 3;
+const RECONNECT_DELAY_MS = 2000;
 
-export default function PersonDetector({ deviceId, accessToken, onLog }) {
+export default function PersonDetector({ deviceId, accessToken, onLog, onPersonDetected, onStatusChange, onAudioTrack }) {
   const [model, setModel] = useState(null);
   const [modelLoading, setModelLoading] = useState(false);
   const [streaming, setStreaming] = useState(false);
   const [detecting, setDetecting] = useState(false);
   const [status, setStatus] = useState('idle');
   const [personCount, setPersonCount] = useState(0);
-  const [history, setHistory] = useState([]);
   const [errorMsg, setErrorMsg] = useState('');
 
   const videoRef = useRef(null);
@@ -22,6 +21,10 @@ export default function PersonDetector({ deviceId, accessToken, onLog }) {
   const pcRef = useRef(null);
   const sessionUrlRef = useRef(null);
   const detectIntervalRef = useRef(null);
+  const prevCountRef = useRef(0);
+  const reconnectAttemptRef = useRef(0);
+  const reconnectTimerRef = useRef(null);
+  const unmountedRef = useRef(false);
 
   const log = useCallback((msg) => onLog?.(`[Detector] ${msg}`), [onLog]);
 
@@ -45,13 +48,30 @@ export default function PersonDetector({ deviceId, accessToken, onLog }) {
     }
   }, [model, log]);
 
+  // Clean up existing peer connection without resetting UI state
+  const cleanupConnection = useCallback(async () => {
+    if (pcRef.current) {
+      pcRef.current.close();
+      pcRef.current = null;
+    }
+    if (videoRef.current) videoRef.current.srcObject = null;
+    if (sessionUrlRef.current) {
+      await closeWhepSession(sessionUrlRef.current, accessToken).catch(() => {});
+      sessionUrlRef.current = null;
+    }
+  }, [accessToken]);
+
   // Start WHEP stream
   const startStream = useCallback(async () => {
     setErrorMsg('');
     setStatus('connecting');
+    onStatusChange?.('connecting');
     log('Starting WHEP stream...');
 
     try {
+      // Clean up any previous connection first
+      await cleanupConnection();
+
       const pc = new RTCPeerConnection({
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
@@ -68,6 +88,9 @@ export default function PersonDetector({ deviceId, accessToken, onLog }) {
         if (videoRef.current && event.streams[0]) {
           videoRef.current.srcObject = event.streams[0];
         }
+        if (event.track.kind === 'audio') {
+          onAudioTrack?.(event.track);
+        }
       };
 
       pc.onicecandidate = (event) => {
@@ -75,20 +98,27 @@ export default function PersonDetector({ deviceId, accessToken, onLog }) {
           log(`Local ICE: ${event.candidate.type} ${event.candidate.protocol} ${event.candidate.address || ''}:${event.candidate.port || ''}`);
         }
       };
-      pc.oniceconnectionstatechange = () => log(`ICE: ${pc.iceConnectionState}`);
+      pc.oniceconnectionstatechange = () => {
+        log(`ICE: ${pc.iceConnectionState}`);
+      };
       pc.onconnectionstatechange = () => {
         log(`Connection: ${pc.connectionState}`);
-        if (pc.connectionState === 'connected') setStatus('live');
-        if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
-          setStatus('error');
-          setErrorMsg(`WebRTC ${pc.connectionState}`);
+        if (pc.connectionState === 'connected') {
+          setStatus('live');
+          onStatusChange?.('live');
+          setErrorMsg('');
+          reconnectAttemptRef.current = 0; // reset on success
+        }
+        if (pc.connectionState === 'failed') {
+          log('WebRTC connection failed, will attempt reconnect...');
+          handleReconnect();
         }
       };
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      // Wait for ICE gathering
+      // Wait for ICE gathering (with longer timeout)
       if (pc.iceGatheringState !== 'complete') {
         await new Promise((resolve) => {
           const handler = () => {
@@ -98,7 +128,7 @@ export default function PersonDetector({ deviceId, accessToken, onLog }) {
             }
           };
           pc.addEventListener('icegatheringstatechange', handler);
-          setTimeout(resolve, 5000);
+          setTimeout(resolve, 8000);
         });
       }
 
@@ -109,8 +139,6 @@ export default function PersonDetector({ deviceId, accessToken, onLog }) {
       sessionUrlRef.current = location;
       log(`WHEP session: ${location}`);
 
-      // Fix SDP direction: Ring sends to us, so their answer should be sendonly
-      // to match our recvonly offer
       const fixedSdp = sdpAnswer
         .replace(/a=recvonly/g, 'a=sendonly')
         .replace(/a=sendrecv/g, 'a=sendonly');
@@ -119,11 +147,32 @@ export default function PersonDetector({ deviceId, accessToken, onLog }) {
       log('SDP answer applied, waiting for media...');
       setStreaming(true);
     } catch (err) {
-      setStatus('error');
-      setErrorMsg(err.message);
       log(`Stream error: ${err.message}`);
+      handleReconnect();
     }
-  }, [deviceId, accessToken, log]);
+  }, [deviceId, accessToken, log, onStatusChange, cleanupConnection]);
+
+  // Auto-reconnect on failure
+  const handleReconnect = useCallback(() => {
+    if (unmountedRef.current) return;
+    const attempt = reconnectAttemptRef.current;
+    if (attempt >= MAX_RECONNECT_ATTEMPTS) {
+      setStatus('error');
+      onStatusChange?.('error');
+      setErrorMsg(`Connection failed after ${MAX_RECONNECT_ATTEMPTS} attempts`);
+      log(`Giving up after ${MAX_RECONNECT_ATTEMPTS} reconnect attempts`);
+      return;
+    }
+    reconnectAttemptRef.current = attempt + 1;
+    const delay = RECONNECT_DELAY_MS * (attempt + 1);
+    setStatus('connecting');
+    onStatusChange?.('connecting');
+    setErrorMsg(`Reconnecting (${attempt + 1}/${MAX_RECONNECT_ATTEMPTS})...`);
+    log(`Reconnecting in ${delay}ms (attempt ${attempt + 1}/${MAX_RECONNECT_ATTEMPTS})`);
+    reconnectTimerRef.current = setTimeout(() => {
+      if (!unmountedRef.current) startStream();
+    }, delay);
+  }, [startStream, onStatusChange, log]);
 
   // Run detection on a single frame
   const detectFrame = useCallback(async (activeModel) => {
@@ -146,6 +195,11 @@ export default function PersonDetector({ deviceId, accessToken, onLog }) {
     const count = persons.length;
     setPersonCount(count);
 
+    if (count !== prevCountRef.current) {
+      onPersonDetected?.(count);
+    }
+    prevCountRef.current = count;
+
     // Draw bounding boxes
     ctx.strokeStyle = '#00ff88';
     ctx.lineWidth = 2;
@@ -157,12 +211,7 @@ export default function PersonDetector({ deviceId, accessToken, onLog }) {
       ctx.strokeRect(x, y, w, h);
       ctx.fillText(`person ${Math.round(p.score * 100)}%`, x, y > 16 ? y - 4 : y + 16);
     });
-
-    // Add to history
-    const now = new Date();
-    const timeLabel = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-    setHistory((prev) => [...prev.slice(-(MAX_HISTORY - 1)), { time: timeLabel, count }]);
-  }, []);
+  }, [onPersonDetected]);
 
   // Start/stop detection loop
   const startDetection = useCallback(async () => {
@@ -170,7 +219,6 @@ export default function PersonDetector({ deviceId, accessToken, onLog }) {
     try {
       const activeModel = await loadModel();
       setDetecting(true);
-      setHistory([]);
       log(`Detection running every ${DETECT_INTERVAL_MS}ms`);
 
       detectIntervalRef.current = setInterval(() => {
@@ -195,24 +243,24 @@ export default function PersonDetector({ deviceId, accessToken, onLog }) {
   // Stop stream and cleanup
   const stopAll = useCallback(async () => {
     stopDetection();
-    if (pcRef.current) {
-      pcRef.current.close();
-      pcRef.current = null;
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
     }
-    if (videoRef.current) videoRef.current.srcObject = null;
-    if (sessionUrlRef.current) {
-      log(`Closing WHEP session...`);
-      await closeWhepSession(sessionUrlRef.current, accessToken).catch((e) => log(`Close error: ${e.message}`));
-      sessionUrlRef.current = null;
-    }
+    reconnectAttemptRef.current = 0;
+    await cleanupConnection();
     setStreaming(false);
     setStatus('idle');
+    onStatusChange?.('idle');
     log('Stopped');
-  }, [stopDetection, accessToken, log]);
+  }, [stopDetection, cleanupConnection, onStatusChange, log]);
 
   // Cleanup on unmount
   useEffect(() => {
+    unmountedRef.current = false;
     return () => {
+      unmountedRef.current = true;
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
       if (detectIntervalRef.current) clearInterval(detectIntervalRef.current);
       if (pcRef.current) pcRef.current.close();
       if (sessionUrlRef.current) {
@@ -223,29 +271,9 @@ export default function PersonDetector({ deviceId, accessToken, onLog }) {
 
   return (
     <div className="person-detector">
-      <div className="detector-header">
-        <h3>Person Detection</h3>
-        <div className="detector-badges">
-          <span className={`stream-status ${status}`}>
-            {status === 'idle' && '⏹ Off'}
-            {status === 'connecting' && '⏳ Connecting'}
-            {status === 'live' && '🔴 Live'}
-            {status === 'error' && '⚠ Error'}
-          </span>
-          {detecting && <span className="badge-detecting">🔍 Detecting</span>}
-          {modelLoading && <span className="badge-loading">Loading model...</span>}
-        </div>
-      </div>
-
-      {/* Live count display */}
-      <div className="count-display">
-        <div className="count-number">{personCount}</div>
-        <div className="count-label">person{personCount !== 1 ? 's' : ''} detected</div>
-      </div>
-
       {/* Video + Canvas overlay */}
       <div className="detector-video-container">
-        <video ref={videoRef} autoPlay playsInline muted className="detector-video" />
+        <video ref={videoRef} autoPlay playsInline className="detector-video" />
         <canvas ref={canvasRef} className="detector-canvas" />
         {status === 'idle' && (
           <div className="video-placeholder">Start stream to begin detection</div>
@@ -275,26 +303,6 @@ export default function PersonDetector({ deviceId, accessToken, onLog }) {
       </div>
 
       {errorMsg && <div className="stream-error">{errorMsg}</div>}
-
-      {/* Historical chart */}
-      {history.length > 1 && (
-        <div className="history-chart">
-          <h4>Person Count Over Time</h4>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={history}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#30363d" />
-              <XAxis dataKey="time" stroke="#8b949e" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
-              <YAxis stroke="#8b949e" allowDecimals={false} tick={{ fontSize: 11 }} />
-              <Tooltip
-                contentStyle={{ background: '#161b22', border: '1px solid #30363d', borderRadius: 6 }}
-                labelStyle={{ color: '#8b949e' }}
-                itemStyle={{ color: '#58a6ff' }}
-              />
-              <Line type="monotone" dataKey="count" stroke="#58a6ff" strokeWidth={2} dot={false} name="Persons" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
     </div>
   );
 }

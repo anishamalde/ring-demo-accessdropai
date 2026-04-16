@@ -3,9 +3,11 @@ import { refreshToken, getDevices, getDeviceStatus, getDeviceCapabilities, getDe
 import LiveStream from './LiveStream';
 import PersonDetector from './PersonDetector';
 import ClipDownloader from './ClipDownloader';
+import AccessDropScreen from './AccessDropScreen';
 import { CONFIG } from '../config.js';
 
 function App() {
+  const [view, setView] = useState('explorer');
   const [creds, setCreds] = useState({
     accessToken: CONFIG.accessToken || '',
     refreshToken: CONFIG.refreshToken || '',
@@ -80,6 +82,19 @@ function App() {
       setLoading('');
     }
   }, [selectedDevice, creds.accessToken]);
+
+  if (view === 'accessdrop') {
+    return (
+      <div className="app">
+        <AccessDropScreen
+          deviceId={selectedDevice}
+          accessToken={creds.accessToken}
+          onBack={() => setView('explorer')}
+          onLog={addLog}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="app">
@@ -156,6 +171,9 @@ function App() {
             <button onClick={() => handleDeviceAction('capabilities')}>Capabilities</button>
             <button onClick={() => handleDeviceAction('location')}>Location</button>
             <button onClick={() => handleDeviceAction('configurations')}>Configurations</button>
+            <button onClick={() => setView('accessdrop')} aria-label="Open AccessDrop AI screen">
+              AccessDrop AI
+            </button>
           </div>
           {deviceDetail && (
             <pre className="json-output">{JSON.stringify(deviceDetail.data, null, 2)}</pre>

@@ -2,130 +2,68 @@
 
 ## Overview
 
-Build an accessibility-focused delivery interaction screen for the Ring AVA Explorer app. The implementation follows an incremental approach: core state machine first, then service layer, then proxy endpoints, then UI components, and finally wiring everything together. JavaScript (React JSX) is used throughout, matching the existing codebase.
+Build an accessibility-focused delivery interaction screen for the Ring AVA Explorer app with live person detection, automatic delivery triggering, real-time transcription from the WHEP audio stream, and text-to-speech via Amazon Polly. Side-by-side layout with phone-framed controls and live video stream.
 
 ## Tasks
 
-- [ ] 1. Implement delivery flow state machine and mock data
-  - [~] 1.1 Create `deliveryFlowEngine.js` with pure state machine logic
-    - Define `DeliveryState` shape: `{ phase, mode, messages, parcelLocation, otpCode, safePlace, startedAt, completedAt, useMockData, error }`
-    - Implement `createInitialState()` returning default idle state
-    - Implement `deliveryReducer(state, action)` handling all action types: `TRIGGER_DOORSTEP`, `ADD_MESSAGE`, `CONFIRM_SAFE_PLACE`, `REQUEST_OTP`, `MARK_RECEIVED`, `ACKNOWLEDGE_DELIVERY`, `SET_MODE`, `SET_MOCK_MODE`, `SET_ERROR`, `RESET`
-    - Enforce phase-based action validity (idle: only TRIGGER_DOORSTEP/SET_MODE/SET_MOCK_MODE/RESET; active: delivery actions; completed: only RESET/SET_MODE)
-    - Invalid actions for current phase return state unchanged
-    - _Requirements: 2.2, 2.4, 3.2, 3.3, 3.4, 5.2, 5.3, 5.4, 5.5, 6.4, 8.4_
+- [x] 1. Implement delivery flow state machine and mock data
+  - [x] 1.1 Create deliveryFlowEngine.js with pure state machine logic
+  - [x] 1.2 Create mockData.js with predefined courier message sequences
 
-  - [ ] 1.2 Create `mockData.js` with predefined courier message sequences
-    - Export `getMockMessages()` returning array of messages covering greeting, safe place discussion, OTP exchange, delivery confirmation
-    - Export `getMockParcelLocation()` returning a mock location description
-    - Each message: `{ id, sender, text, timestamp, type }`
-    - _Requirements: 11.1, 11.4_
+- [x] 2. Implement service layer (speech and transcription)
+  - [x] 2.1 Create speechService.js for Amazon Polly TTS
+  - [x] 2.2 Create transcriptionService.js for Amazon Transcribe streaming
 
-- [ ] 2. Implement service layer (speech and transcription)
-  - [ ] 2.1 Create `speechService.js` for Amazon Polly TTS
-    - Implement `speak(text, voiceId?)` that POSTs to `/api/accessdrop/tts`, receives MP3 buffer, plays via `AudioContext` and `decodeAudioData`
-    - Implement `stop()` to halt current playback
-    - Implement `isSpeaking()` returning boolean state
-    - On Polly failure: silent no-op with console warning (NO Web Speech API fallback)
-    - _Requirements: 6.1, 6.2, 6.3, 7.1, 8.2_
+- [x] 3. Add proxy server endpoints
+  - [x] 3.1 Add POST /api/accessdrop/tts endpoint for Polly
+  - [x] 3.2 Add WebSocket /ws/transcribe endpoint for Transcribe
 
-  - [ ] 2.2 Create `transcriptionService.js` for Amazon Transcribe streaming
-    - Implement `startTranscription(audioTrack, onMessage, onError)` that extracts PCM audio via `AudioContext` + `ScriptProcessorNode`, sends binary chunks over WebSocket to `/ws/transcribe`, parses incoming JSON transcript results
-    - Implement `stopTranscription()` to close WebSocket and stop audio processing
-    - On WebSocket failure: call `onError` so the screen can fall back to mock data
-    - _Requirements: 4.1, 9.2_
+- [x] 4. Build AccessDrop UI components
+  - [x] 4.1 Create DeliveryStatusBar.jsx
+  - [x] 4.2 Create TextModePanel.jsx
+  - [x] 4.3 Create VoiceModePanel.jsx
+  - [x] 4.4 Create AccessDropScreen.jsx
 
-- [ ] 3. Add proxy server endpoints for Polly TTS and Transcribe WebSocket
-  - [ ] 3.1 Add POST `/api/accessdrop/tts` endpoint to `proxy-server.js`
-    - Accept `{ text, voiceId? }` JSON body
-    - Call Amazon Polly `SynthesizeSpeech` with OutputFormat `mp3`, default voice `Joanna` (Neural)
-    - Return MP3 buffer with `Content-Type: audio/mpeg`
-    - Return 400 for missing text, 502 for Polly failures with `{ error, detail }` JSON
-    - Install `@aws-sdk/client-polly` as a dependency
-    - _Requirements: 6.1, 6.2, 7.1, 8.2_
+- [x] 5. Integrate AccessDrop screen into Explorer app
+  - [x] 5.1 Modify App.jsx for view switching and navigation
+  - [x] 5.2 Add AccessDrop CSS styles to App.css
 
-  - [ ] 3.2 Add WebSocket `/ws/transcribe` endpoint to `proxy-server.js`
-    - Accept binary PCM audio frames from browser clients
-    - Stream audio to Amazon Transcribe Streaming via `@aws-sdk/client-transcribe-streaming`
-    - Send transcription results back as JSON: `{ type: 'transcript', text, isFinal, timestamp }`
-    - Send errors as `{ type: 'error', message }`
-    - Install `@aws-sdk/client-transcribe-streaming` and `ws` as dependencies
-    - _Requirements: 4.1, 9.2_
+- [x] 6. Wire mock data fallback and end-to-end flow
+  - [x] 6.1 Implement mock message playback with realistic timing
+  - [x] 6.2 Wire speech service calls in Voice Mode flow
 
-- [ ] 4. Build AccessDrop UI components
-  - [ ] 4.1 Create `DeliveryStatusBar.jsx` shared status indicator
-    - Display current delivery phase (idle/active/completed) with visual styling
-    - Accept `phase` prop
-    - Include ARIA labels for screen reader accessibility
-    - _Requirements: 2.3, 10.4_
+- [x] 7. Add PersonDetector callback props
+  - [x] 7.1 Add onPersonDetected callback prop
+  - [x] 7.2 Add onStatusChange callback prop
+  - [x] 7.3 Add onAudioTrack callback prop
 
-  - [ ] 4.2 Create `TextModePanel.jsx` for deaf/HoH interaction
-    - Render scrollable message panel with transcribed courier messages (high contrast, min 16px text)
-    - Auto-scroll to latest message on new arrivals
-    - Render action buttons: Confirm Safe Place, OTP Help, Mark as Received
-    - Disable buttons not applicable to current delivery phase
-    - Display messages with timestamps in chronological order
-    - Props: `{ messages, deliveryState, onAction }`
-    - Include ARIA labels on all buttons
-    - _Requirements: 4.2, 4.4, 4.5, 5.1, 5.2, 5.3, 5.4, 5.5, 10.1, 10.2, 10.3, 10.4_
+- [x] 8. Embed PersonDetector and add auto-trigger logic
+  - [x] 8.1 Embed PersonDetector in AccessDropScreen with side-by-side layout
+  - [x] 8.2 Implement auto-trigger debounce logic (2s default)
+  - [x] 8.3 Implement onStatusChange handler
+  - [x] 8.4 Add detection status indicator with ARIA labels
+  - [x] 8.5 Wire WHEP audio track to transcription service
+  - [x] 8.6 Ensure PersonDetector cleanup on unmount
 
-  - [ ] 4.3 Create `VoiceModePanel.jsx` for blind/low-vision interaction
-    - Display speaking indicator when Polly is active
-    - Show delivery status and parcel location info
-    - Render action buttons: Acknowledge Delivery, Where is my parcel?
-    - Use ARIA live regions to announce delivery status changes
-    - Props: `{ deliveryState, isSpeaking, parcelLocation, onAction }`
-    - _Requirements: 6.1, 6.2, 6.3, 6.4, 7.1, 7.2, 7.3, 10.4, 10.5_
+- [x] 9. Add WebRTC auto-reconnect
+  - [x] 9.1 Add auto-reconnect with 3 retries and exponential backoff
+  - [x] 9.2 Clean up previous connection before retry
 
-  - [ ] 4.4 Create `AccessDropScreen.jsx` top-level component
-    - Manage delivery state via `useReducer` with `deliveryReducer`
-    - Render back navigation button
-    - Render accessibility profile selector (Text Mode / Voice Mode toggle) with active indicator
-    - Render doorstep event trigger button (simulate motion detection)
-    - Render `DeliveryStatusBar`
-    - Conditionally render `TextModePanel` or `VoiceModePanel` based on selected mode
-    - Render mock mode toggle
-    - Wire transcription service: start on delivery flow begin, stop on end
-    - Wire speech service: speak on voice mode events
-    - Handle WHEP audio extraction from stream for transcription
-    - Display delivery completed summary with reset option
-    - Disable action buttons in completed state
-    - Props: `{ deviceId, accessToken, onBack, onLog }`
-    - _Requirements: 1.1, 1.4, 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 3.3, 3.4, 3.5, 4.3, 8.1, 8.3, 8.4, 9.1, 9.2, 9.3, 9.4, 11.2, 11.3_
+- [x] 10. Add phone frame UI and layout styles
+  - [x] 10.1 Add phone frame CSS (notch, screen, home indicator)
+  - [x] 10.2 Add side-by-side layout (controls left, stream right)
+  - [x] 10.3 Add detection status badge styles
 
-- [ ] 5. Integrate AccessDrop screen into Explorer app
-  - [ ] 5.1 Modify `App.jsx` to add view switching and navigation
-    - Add `view` state: `'explorer' | 'accessdrop'`
-    - Render AccessDrop navigation link in device actions section (visible when device selected)
-    - Render `AccessDropScreen` when view is `'accessdrop'`, passing deviceId, accessToken, onBack, onLog
-    - Preserve Explorer state when switching views
-    - _Requirements: 1.1, 1.2, 1.3, 1.4_
-
-  - [ ] 5.2 Add AccessDrop CSS styles to `App.css`
-    - Style AccessDrop screen layout, message panel, action buttons, status bar, profile selector
-    - Ensure minimum 16px text for messages, 14px for button labels
-    - Ensure 4.5:1 colour contrast ratio for all text
-    - Add visible focus indicators for keyboard navigation
-    - _Requirements: 10.1, 10.2, 10.3_
-
-- [ ] 6. Wire mock data fallback and end-to-end flow
-  - [ ] 6.1 Implement mock message playback with realistic timing in AccessDropScreen
-    - When mock mode is active, dispatch `ADD_MESSAGE` actions with timed delays to simulate live conversation
-    - Cover full delivery flow: greeting, safe place discussion, OTP exchange, delivery confirmation
-    - Auto-detect mock mode when transcription service fails
-    - _Requirements: 11.1, 11.2, 11.3, 11.4_
-
-  - [ ] 6.2 Wire speech service calls in Voice Mode flow
-    - Speak greeting on delivery start in voice mode
-    - Announce each delivery event (safe place confirmed, OTP, completion)
-    - Speak parcel location on "Where is my parcel?" action
-    - Speak "not yet confirmed" when no parcel location set
-    - Speak completion message on delivery end
-    - _Requirements: 6.1, 6.2, 6.4, 7.1, 7.2, 7.3, 8.2_
+- [x] 11. Write property-based tests
+  - [x] 11.1 Extract testable debounce logic into autoTriggerLogic.js
+  - [x] 11.2 Property test: Detection callback fires on count transitions
+  - [x] 11.3 Property test: Debounce guards auto-trigger timing
+  - [x] 11.4 Property test: Auto-trigger respects delivery phase
 
 ## Notes
 
-- Each task references specific requirements for traceability
-- The delivery flow engine is implemented first as it's the core logic with no external dependencies
-- Amazon Polly is the ONLY TTS provider; there is no Web Speech API fallback
-- This is a hackathon MVP; no tests are included
+- deliveryFlowEngine.js is unchanged; existing TRIGGER_DOORSTEP action handles triggers correctly
+- PersonDetector manages its own WHEP lifecycle independently of delivery state
+- Manual trigger button retained as fallback
+- Amazon Polly is the only TTS provider (no Web Speech API fallback)
+- All 46 tests pass across 4 test files

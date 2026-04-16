@@ -5,7 +5,7 @@ body {
   background: #0f1117;
   color: #e1e4e8;
   padding: 24px;
-  max-width: 960px;
+  max-width: 1600px;
   margin: 0 auto;
 }
 
@@ -387,3 +387,530 @@ button:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
   cursor: pointer;
 }
 .btn-save:hover { background: #2ea043; }
+
+/* ============================================================
+   AccessDrop AI Styles
+   ============================================================ */
+
+/* --- AccessDropScreen layout --- */
+.ad-screen {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 16px 0;
+}
+
+.ad-back-btn {
+  background: transparent;
+  color: #58a6ff;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+.ad-back-btn:hover {
+  background: #161b22;
+  border-color: #58a6ff;
+}
+.ad-back-btn:focus-visible {
+  outline: 2px solid #58a6ff;
+  outline-offset: 2px;
+}
+
+.ad-title {
+  font-size: 1.5rem;
+  color: #58a6ff;
+  margin-bottom: 16px;
+}
+
+/* --- Two-column layout --- */
+.ad-layout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.ad-controls-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+
+/* --- Phone frame --- */
+.ad-phone-frame {
+  width: 500px;
+  background: #1a1a1a;
+  border: 3px solid #444;
+  border-radius: 40px;
+  padding: 12px;
+  box-shadow: 0 0 0 2px #222, 0 8px 40px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ad-phone-notch {
+  width: 130px;
+  height: 26px;
+  background: #000;
+  border-radius: 0 0 16px 16px;
+  margin-bottom: 8px;
+}
+
+.ad-phone-screen {
+  width: 100%;
+  background: #0f1117;
+  border-radius: 24px;
+  padding: 16px;
+  overflow-y: auto;
+  max-height: none;
+  min-height: 700px;
+}
+
+.ad-phone-home {
+  width: 40px;
+  height: 5px;
+  background: #555;
+  border-radius: 3px;
+  margin-top: 10px;
+}
+
+.ad-stream-col {
+  flex: 1;
+  min-width: 0;
+  position: sticky;
+  top: 16px;
+}
+
+/* --- Mode selector --- */
+.ad-mode-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.ad-mode-btn {
+  background: #21262d;
+  color: #e1e4e8;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.ad-mode-btn:hover {
+  background: #292e36;
+  border-color: #58a6ff;
+}
+.ad-mode-btn:focus-visible {
+  outline: 2px solid #58a6ff;
+  outline-offset: 2px;
+}
+.ad-mode-btn--active {
+  background: #1c3a5f;
+  border-color: #58a6ff;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* --- Doorstep trigger button --- */
+.ad-trigger-btn {
+  background: #238636;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 24px;
+  font-size: 15px;
+  cursor: pointer;
+  margin-bottom: 16px;
+  width: 100%;
+}
+.ad-trigger-btn:hover {
+  background: #2ea043;
+}
+.ad-trigger-btn:disabled {
+  background: #21262d;
+  color: #484f58;
+  cursor: not-allowed;
+}
+.ad-trigger-btn:focus-visible {
+  outline: 2px solid #58a6ff;
+  outline-offset: 2px;
+}
+
+/* --- Mock mode toggle --- */
+.ad-mock-toggle {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #8b949e;
+  margin-top: 16px;
+  cursor: pointer;
+}
+.ad-mock-toggle input[type="checkbox"] {
+  width: auto;
+  cursor: pointer;
+}
+.ad-mock-toggle:focus-within {
+  outline: 2px solid #58a6ff;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* --- Completed summary --- */
+.ad-completed {
+  background: #0d2818;
+  border: 1px solid #238636;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.ad-completed-title {
+  font-size: 1.1rem;
+  color: #3fb950;
+  margin-bottom: 8px;
+}
+
+.ad-completed-detail {
+  font-size: 14px;
+  color: #e1e4e8;
+  margin-bottom: 4px;
+}
+
+.ad-reset-btn {
+  background: #21262d;
+  color: #e1e4e8;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 12px;
+}
+.ad-reset-btn:hover {
+  background: #292e36;
+  border-color: #58a6ff;
+}
+.ad-reset-btn:focus-visible {
+  outline: 2px solid #58a6ff;
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   DeliveryStatusBar
+   ============================================================ */
+.ad-status-bar {
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.ad-status-idle {
+  background: #21262d;
+  color: #8b949e;
+  border: 1px solid #30363d;
+}
+
+.ad-status-active {
+  background: #2d1b00;
+  color: #d29922;
+  border: 1px solid #d29922;
+}
+
+.ad-status-completed {
+  background: #0d2818;
+  color: #3fb950;
+  border: 1px solid #238636;
+}
+
+/* ============================================================
+   TextModePanel
+   ============================================================ */
+.ad-text-panel {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.ad-text-messages {
+  max-height: 500px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+  padding: 8px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+}
+
+.ad-text-empty {
+  color: #8b949e;
+  font-size: 16px;
+  text-align: center;
+  padding: 24px 0;
+}
+
+.ad-text-message {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.ad-text-message--courier {
+  background: #1c2333;
+  border-left: 3px solid #58a6ff;
+}
+
+.ad-text-message--customer {
+  background: #1c2333;
+  border-left: 3px solid #238636;
+}
+
+.ad-text-message--system {
+  background: #1a1a2e;
+  border-left: 3px solid #d29922;
+}
+
+.ad-text-message-time {
+  font-size: 12px;
+  color: #8b949e;
+}
+
+.ad-text-message-sender {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e1e4e8;
+  text-transform: capitalize;
+}
+
+.ad-text-message-text {
+  font-size: 16px;
+  color: #e1e4e8;
+  line-height: 1.5;
+}
+
+/* --- Text mode action buttons --- */
+.ad-text-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ad-text-btn {
+  border: none;
+  border-radius: 6px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #ffffff;
+  transition: background 0.15s;
+}
+.ad-text-btn:disabled {
+  background: #21262d;
+  color: #484f58;
+  cursor: not-allowed;
+}
+.ad-text-btn:focus-visible {
+  outline: 2px solid #58a6ff;
+  outline-offset: 2px;
+}
+
+.ad-text-btn--safe-place {
+  background: #1f6feb;
+}
+.ad-text-btn--safe-place:hover:not(:disabled) {
+  background: #388bfd;
+}
+
+.ad-text-btn--otp {
+  background: #d29922;
+  color: #0f1117;
+}
+.ad-text-btn--otp:hover:not(:disabled) {
+  background: #e3b341;
+}
+
+.ad-text-btn--received {
+  background: #238636;
+}
+.ad-text-btn--received:hover:not(:disabled) {
+  background: #2ea043;
+}
+
+/* ============================================================
+   VoiceModePanel
+   ============================================================ */
+.ad-voice-panel {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.ad-voice-speaking {
+  text-align: center;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  background: #21262d;
+  color: #8b949e;
+  border: 1px solid #30363d;
+}
+
+.ad-voice-speaking--active {
+  background: #1c3a5f;
+  color: #58a6ff;
+  border-color: #58a6ff;
+  animation: ad-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes ad-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.ad-voice-status {
+  padding: 10px;
+  margin-bottom: 12px;
+}
+
+.ad-voice-status-text {
+  font-size: 16px;
+  color: #e1e4e8;
+}
+
+.ad-voice-location {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.ad-voice-location-text {
+  font-size: 16px;
+  color: #e1e4e8;
+}
+
+/* --- Voice mode action buttons --- */
+.ad-voice-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ad-voice-btn {
+  border: none;
+  border-radius: 6px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #ffffff;
+  transition: background 0.15s;
+}
+.ad-voice-btn:disabled {
+  background: #21262d;
+  color: #484f58;
+  cursor: not-allowed;
+}
+.ad-voice-btn:focus-visible {
+  outline: 2px solid #58a6ff;
+  outline-offset: 2px;
+}
+
+.ad-voice-btn--acknowledge {
+  background: #238636;
+}
+.ad-voice-btn--acknowledge:hover:not(:disabled) {
+  background: #2ea043;
+}
+
+.ad-voice-btn--where {
+  background: #1f6feb;
+}
+.ad-voice-btn--where:hover:not(:disabled) {
+  background: #388bfd;
+}
+
+/* ============================================================
+   AccessDrop Live Detection
+   ============================================================ */
+
+.ad-detector-section {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.ad-detection-status {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px 0;
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+}
+
+.ad-detection-badge {
+  font-size: 0.8rem;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.ad-detection-badge--idle {
+  background: #21262d;
+  color: #8b949e;
+}
+
+.ad-detection-badge--connecting {
+  background: #2d1b00;
+  color: #d29922;
+}
+
+.ad-detection-badge--live {
+  background: #1b0000;
+  color: #f85149;
+}
+
+.ad-detection-badge--error {
+  background: #2d1b00;
+  color: #f85149;
+}
+
+.ad-detection-badge--armed {
+  background: #0d2818;
+  color: #3fb950;
+}
+
+.ad-detection-badge--pending {
+  background: #2d1b00;
+  color: #d29922;
+  animation: ad-detection-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes ad-detection-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
