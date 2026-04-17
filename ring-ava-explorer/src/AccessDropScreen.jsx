@@ -232,7 +232,7 @@ export default function AccessDropScreen({ deviceId, accessToken, onBack, onLog 
       if (parcelLocation) {
         speakText(parcelLocation);
       } else {
-        speakText('Parcel location has not yet been confirmed');
+        speakText('Where is my parcel?');
       }
       return;
     }
@@ -312,15 +312,6 @@ export default function AccessDropScreen({ deviceId, accessToken, onBack, onLog 
                 </button>
               </div>
 
-              <button
-                className="ad-trigger-btn"
-                onClick={handleTriggerDoorstep}
-                disabled={phase !== 'idle'}
-                aria-label="Simulate doorstep motion detection"
-              >
-                🚪 Trigger Doorstep Event
-              </button>
-
               <DeliveryStatusBar phase={phase} />
 
               {mode === 'text' ? (
@@ -338,15 +329,6 @@ export default function AccessDropScreen({ deviceId, accessToken, onBack, onLog 
                 />
               )}
 
-              <label className="ad-mock-toggle" aria-label="Toggle mock data mode">
-                <input
-                  type="checkbox"
-                  checked={deliveryState.useMockData}
-                  onChange={handleMockToggle}
-                />
-                Mock Mode
-              </label>
-
               {phase === 'completed' && (
                 <div className="ad-completed" role="status" aria-label="Delivery completed summary">
                   <h3 className="ad-completed-title">Delivery Complete ✅</h3>
@@ -358,18 +340,13 @@ export default function AccessDropScreen({ deviceId, accessToken, onBack, onLog 
                       Completed at: {new Date(deliveryState.completedAt).toLocaleTimeString()}
                     </p>
                   )}
-                  <button
-                    className="ad-reset-btn"
-                    onClick={handleReset}
-                    aria-label="Reset and start new demo"
-                  >
-                    Reset Demo
-                  </button>
                 </div>
               )}
             </div>
             <div className="ad-phone-home"></div>
           </div>
+
+          {/* Presenter controls removed from here */}
         </div>
 
         {/* Right column: live stream */}
@@ -383,6 +360,39 @@ export default function AccessDropScreen({ deviceId, accessToken, onBack, onLog 
               onStatusChange={handleDetectorStatusChange}
               onAudioTrack={handleAudioTrack}
             />
+          </div>
+
+          {/* Presenter controls (below stream) */}
+          <div className="ad-presenter-controls">
+            <button
+              className="ad-trigger-btn"
+              onClick={handleTriggerDoorstep}
+              disabled={phase !== 'idle'}
+              aria-label="Simulate doorstep motion detection"
+            >
+              🚪 Trigger Doorstep Event
+            </button>
+
+            <div className="ad-presenter-row">
+              <label className="ad-mock-toggle" aria-label="Toggle mock data mode">
+                <input
+                  type="checkbox"
+                  checked={deliveryState.useMockData}
+                  onChange={handleMockToggle}
+                />
+                Mock Mode
+              </label>
+
+              {phase === 'completed' && (
+                <button
+                  className="ad-reset-btn"
+                  onClick={handleReset}
+                  aria-label="Reset and start new demo"
+                >
+                  Reset Demo
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

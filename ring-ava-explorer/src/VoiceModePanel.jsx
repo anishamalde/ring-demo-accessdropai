@@ -26,7 +26,7 @@ export default function VoiceModePanel({ deliveryState, isSpeaking = false, parc
 
   const locationText = parcelLocation
     ? `Your parcel is at: ${parcelLocation}`
-    : 'Parcel location has not yet been confirmed.';
+    : 'Where is my parcel?';
 
   return (
     <section className="ad-voice-panel" aria-label="Voice mode interaction panel">

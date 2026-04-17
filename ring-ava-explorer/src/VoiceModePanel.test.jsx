@@ -45,7 +45,7 @@ describe('VoiceModePanel', () => {
 
   it('shows not-yet-confirmed message when no parcel location', () => {
     render(<VoiceModePanel deliveryState={activeState} isSpeaking={false} parcelLocation={null} onAction={() => {}} />);
-    expect(screen.getByText('Parcel location has not yet been confirmed.')).toBeInTheDocument();
+    expect(screen.getByText('Where is my parcel?')).toBeInTheDocument();
   });
 
   it('renders both action buttons', () => {

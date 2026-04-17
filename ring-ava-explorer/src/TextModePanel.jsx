@@ -48,10 +48,10 @@ export default function TextModePanel({ messages = [], deliveryState, onAction }
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`ad-text-message ad-text-message--${msg.sender || 'system'}`}
+            className={`ad-text-message ad-text-message--${msg.sender || 'varun'}`}
           >
             <span className="ad-text-message-time">{formatTimestamp(msg.timestamp)}</span>
-            <span className="ad-text-message-sender">{msg.sender ?? 'system'}</span>
+            <span className="ad-text-message-sender">{msg.sender ?? 'varun'}</span>
             <span className="ad-text-message-text">{msg.text}</span>
           </div>
         ))}

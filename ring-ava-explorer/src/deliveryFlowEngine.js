@@ -80,15 +80,17 @@ export function deliveryReducer(state, action) {
     case 'CONFIRM_SAFE_PLACE': {
       const systemMsg = {
         id: `sys-safe-${Date.now()}`,
-        sender: 'system',
+        sender: 'varun',
         text: `Safe place confirmed: ${action.location}`,
         timestamp: Date.now(),
         isFinal: true,
       };
       return {
         ...state,
+        phase: 'completed',
         parcelLocation: action.location,
         safePlace: action.location,
+        completedAt: Date.now(),
         messages: [...state.messages, systemMsg],
       };
     }
@@ -97,7 +99,7 @@ export function deliveryReducer(state, action) {
       const otp = generateOtp();
       const otpMsg = {
         id: `sys-otp-${Date.now()}`,
-        sender: 'system',
+        sender: 'varun',
         text: `Your OTP code is: ${otp}`,
         timestamp: Date.now(),
         isFinal: true,

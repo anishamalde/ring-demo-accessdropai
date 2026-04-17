@@ -441,11 +441,11 @@ button:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
 /* --- Phone frame --- */
 .ad-phone-frame {
   width: 500px;
-  background: #1a1a1a;
-  border: 3px solid #444;
+  background: #0a0e1a;
+  border: 2px solid rgba(59, 130, 246, 0.3);
   border-radius: 40px;
   padding: 12px;
-  box-shadow: 0 0 0 2px #222, 0 8px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.15), 0 8px 40px rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -461,7 +461,7 @@ button:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
 
 .ad-phone-screen {
   width: 100%;
-  background: #0f1117;
+  background: linear-gradient(180deg, #0c1222 0%, #0a0e1a 100%);
   border-radius: 24px;
   padding: 16px;
   overflow-y: auto;
@@ -472,9 +472,22 @@ button:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
 .ad-phone-home {
   width: 40px;
   height: 5px;
-  background: #555;
+  background: rgba(59, 130, 246, 0.4);
   border-radius: 3px;
   margin-top: 10px;
+}
+
+/* --- Presenter controls (outside phone) --- */
+.ad-presenter-controls {
+  margin-top: 16px;
+  width: 100%;
+}
+
+.ad-presenter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .ad-stream-col {
@@ -492,52 +505,61 @@ button:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
 }
 
 .ad-mode-btn {
-  background: #21262d;
-  color: #e1e4e8;
-  border: 1px solid #30363d;
-  border-radius: 6px;
-  padding: 10px 20px;
+  background: rgba(15, 23, 42, 0.8);
+  color: #94a3b8;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 12px;
+  padding: 12px 20px;
   font-size: 14px;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: all 0.2s;
+  flex: 1;
+  text-align: center;
 }
 .ad-mode-btn:hover {
-  background: #292e36;
-  border-color: #58a6ff;
+  background: rgba(30, 58, 138, 0.3);
+  border-color: rgba(59, 130, 246, 0.5);
+  color: #e2e8f0;
 }
 .ad-mode-btn:focus-visible {
-  outline: 2px solid #58a6ff;
+  outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }
 .ad-mode-btn--active {
-  background: #1c3a5f;
-  border-color: #58a6ff;
+  background: rgba(30, 58, 138, 0.4);
+  border-color: #3b82f6;
   color: #ffffff;
   font-weight: 600;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.2);
 }
 
 /* --- Doorstep trigger button --- */
 .ad-trigger-btn {
-  background: #238636;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
   color: #ffffff;
   border: none;
-  border-radius: 6px;
-  padding: 12px 24px;
+  border-radius: 12px;
+  padding: 14px 24px;
   font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
   margin-bottom: 16px;
   width: 100%;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 .ad-trigger-btn:hover {
-  background: #2ea043;
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
 }
 .ad-trigger-btn:disabled {
-  background: #21262d;
-  color: #484f58;
+  background: rgba(15, 23, 42, 0.6);
+  color: #475569;
   cursor: not-allowed;
+  box-shadow: none;
 }
 .ad-trigger-btn:focus-visible {
-  outline: 2px solid #58a6ff;
+  outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }
 
@@ -564,16 +586,16 @@ button:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
 
 /* --- Completed summary --- */
 .ad-completed {
-  background: #0d2818;
-  border: 1px solid #238636;
-  border-radius: 8px;
+  background: rgba(6, 78, 59, 0.2);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  border-radius: 16px;
   padding: 16px;
   margin-top: 16px;
 }
 
 .ad-completed-title {
   font-size: 1.1rem;
-  color: #3fb950;
+  color: #34d399;
   margin-bottom: 8px;
 }
 
@@ -606,7 +628,7 @@ button:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
    DeliveryStatusBar
    ============================================================ */
 .ad-status-bar {
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 10px 16px;
   margin-bottom: 16px;
   font-size: 14px;
@@ -615,30 +637,30 @@ button:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
 }
 
 .ad-status-idle {
-  background: #21262d;
-  color: #8b949e;
-  border: 1px solid #30363d;
+  background: rgba(15, 23, 42, 0.6);
+  color: #94a3b8;
+  border: 1px solid rgba(59, 130, 246, 0.1);
 }
 
 .ad-status-active {
-  background: #2d1b00;
-  color: #d29922;
-  border: 1px solid #d29922;
+  background: rgba(30, 58, 138, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .ad-status-completed {
-  background: #0d2818;
-  color: #3fb950;
-  border: 1px solid #238636;
+  background: rgba(6, 78, 59, 0.3);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.3);
 }
 
 /* ============================================================
    TextModePanel
    ============================================================ */
 .ad-text-panel {
-  background: #161b22;
-  border: 1px solid #30363d;
-  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  border-radius: 16px;
   padding: 16px;
   margin-bottom: 16px;
 }
@@ -648,9 +670,9 @@ button:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
   overflow-y: auto;
   margin-bottom: 16px;
   padding: 8px;
-  background: #0d1117;
-  border: 1px solid #30363d;
-  border-radius: 6px;
+  background: rgba(2, 6, 23, 0.5);
+  border: 1px solid rgba(59, 130, 246, 0.1);
+  border-radius: 12px;
 }
 
 .ad-text-empty {
@@ -684,6 +706,11 @@ button:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
   border-left: 3px solid #d29922;
 }
 
+.ad-text-message--varun {
+  background: #1a1a2e;
+  border-left: 3px solid #d29922;
+}
+
 .ad-text-message-time {
   font-size: 12px;
   color: #8b949e;
@@ -705,59 +732,65 @@ button:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
 /* --- Text mode action buttons --- */
 .ad-text-actions {
   display: flex;
+  flex-direction: column;
   gap: 8px;
-  flex-wrap: wrap;
 }
 
 .ad-text-btn {
   border: none;
-  border-radius: 6px;
-  padding: 10px 18px;
+  border-radius: 10px;
+  padding: 12px 18px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   color: #ffffff;
-  transition: background 0.15s;
+  transition: all 0.2s;
+  width: 100%;
+  text-align: center;
 }
 .ad-text-btn:disabled {
-  background: #21262d;
-  color: #484f58;
+  background: rgba(30, 41, 59, 0.4);
+  color: #475569;
   cursor: not-allowed;
+  border: 1px solid rgba(59, 130, 246, 0.08);
+  box-shadow: none;
 }
 .ad-text-btn:focus-visible {
-  outline: 2px solid #58a6ff;
+  outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }
 
 .ad-text-btn--safe-place {
-  background: #1f6feb;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 .ad-text-btn--safe-place:hover:not(:disabled) {
-  background: #388bfd;
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
 }
 
 .ad-text-btn--otp {
-  background: #d29922;
-  color: #0f1117;
+  background: rgba(30, 41, 59, 0.8);
+  color: #e2e8f0;
 }
 .ad-text-btn--otp:hover:not(:disabled) {
-  background: #e3b341;
+  background: rgba(30, 58, 138, 0.3);
 }
 
 .ad-text-btn--received {
-  background: #238636;
+  background: rgba(30, 41, 59, 0.8);
+  color: #e2e8f0;
 }
 .ad-text-btn--received:hover:not(:disabled) {
-  background: #2ea043;
+  background: rgba(30, 58, 138, 0.3);
 }
 
 /* ============================================================
    VoiceModePanel
    ============================================================ */
 .ad-voice-panel {
-  background: #161b22;
-  border: 1px solid #30363d;
-  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  border-radius: 16px;
   padding: 16px;
   margin-bottom: 16px;
 }
@@ -765,19 +798,19 @@ button:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
 .ad-voice-speaking {
   text-align: center;
   padding: 12px;
-  border-radius: 6px;
+  border-radius: 12px;
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 12px;
-  background: #21262d;
-  color: #8b949e;
-  border: 1px solid #30363d;
+  background: rgba(15, 23, 42, 0.8);
+  color: #94a3b8;
+  border: 1px solid rgba(59, 130, 246, 0.1);
 }
 
 .ad-voice-speaking--active {
-  background: #1c3a5f;
-  color: #58a6ff;
-  border-color: #58a6ff;
+  background: rgba(30, 58, 138, 0.3);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.4);
   animation: ad-pulse 1.5s ease-in-out infinite;
 }
 
@@ -818,36 +851,41 @@ button:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
 
 .ad-voice-btn {
   border: none;
-  border-radius: 6px;
-  padding: 10px 18px;
+  border-radius: 10px;
+  padding: 12px 18px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   color: #ffffff;
-  transition: background 0.15s;
+  transition: all 0.2s;
+  flex: 1;
+  text-align: center;
 }
 .ad-voice-btn:disabled {
-  background: #21262d;
-  color: #484f58;
+  background: rgba(15, 23, 42, 0.6);
+  color: #475569;
   cursor: not-allowed;
 }
 .ad-voice-btn:focus-visible {
-  outline: 2px solid #58a6ff;
+  outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }
 
 .ad-voice-btn--acknowledge {
-  background: #238636;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 .ad-voice-btn--acknowledge:hover:not(:disabled) {
-  background: #2ea043;
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
 }
 
 .ad-voice-btn--where {
-  background: #1f6feb;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(59, 130, 246, 0.2);
 }
 .ad-voice-btn--where:hover:not(:disabled) {
-  background: #388bfd;
+  background: rgba(30, 58, 138, 0.3);
+  border-color: rgba(59, 130, 246, 0.4);
 }
 
 /* ============================================================
@@ -855,9 +893,9 @@ button:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
    ============================================================ */
 
 .ad-detector-section {
-  background: #161b22;
-  border: 1px solid #30363d;
-  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  border-radius: 16px;
   padding: 16px;
   margin-bottom: 16px;
 }
