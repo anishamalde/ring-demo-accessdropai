@@ -2,68 +2,75 @@
 
 ## Overview
 
-Build an accessibility-focused delivery interaction screen for the Ring AVA Explorer app with live person detection, automatic delivery triggering, real-time transcription from the WHEP audio stream, and text-to-speech via Amazon Polly. Side-by-side layout with phone-framed controls and live video stream.
+Accessibility-focused delivery interaction screen for Ring AVA Explorer with live person detection, automatic delivery triggering, real-time transcription, and text-to-speech. Side-by-side layout with phone-framed controls and live video stream.
 
 ## Tasks
 
-- [x] 1. Implement delivery flow state machine and mock data
-  - [x] 1.1 Create deliveryFlowEngine.js with pure state machine logic
-  - [x] 1.2 Create mockData.js with predefined courier message sequences
+- [x] 1. Core state machine and mock data
+  - [x] 1.1 Create deliveryFlowEngine.js (CONFIRM_SAFE_PLACE completes delivery)
+  - [x] 1.2 Create mockData.js with "customer" sender labels
 
-- [x] 2. Implement service layer (speech and transcription)
-  - [x] 2.1 Create speechService.js for Amazon Polly TTS
-  - [x] 2.2 Create transcriptionService.js for Amazon Transcribe streaming
+- [x] 2. Service layer
+  - [x] 2.1 Create speechService.js (Polly TTS, no Web Speech API fallback)
+  - [x] 2.2 Create transcriptionService.js (WebSocket to proxy, PCM audio)
 
-- [x] 3. Add proxy server endpoints
-  - [x] 3.1 Add POST /api/accessdrop/tts endpoint for Polly
-  - [x] 3.2 Add WebSocket /ws/transcribe endpoint for Transcribe
+- [x] 3. Proxy server endpoints
+  - [x] 3.1 POST /api/accessdrop/tts (Polly)
+  - [x] 3.2 WebSocket /ws/transcribe (Transcribe Streaming)
 
-- [x] 4. Build AccessDrop UI components
-  - [x] 4.1 Create DeliveryStatusBar.jsx
-  - [x] 4.2 Create TextModePanel.jsx
-  - [x] 4.3 Create VoiceModePanel.jsx
-  - [x] 4.4 Create AccessDropScreen.jsx
+- [x] 4. UI components
+  - [x] 4.1 DeliveryStatusBar.jsx
+  - [x] 4.2 TextModePanel.jsx (stacked full-width buttons, "customer" sender)
+  - [x] 4.3 VoiceModePanel.jsx ("Where is my parcel?" when unconfirmed)
+  - [x] 4.4 AccessDropScreen.jsx (phone frame, side-by-side layout)
 
-- [x] 5. Integrate AccessDrop screen into Explorer app
-  - [x] 5.1 Modify App.jsx for view switching and navigation
-  - [x] 5.2 Add AccessDrop CSS styles to App.css
+- [x] 5. Explorer integration
+  - [x] 5.1 App.jsx view switching
+  - [x] 5.2 CSS styles (dark navy/blue theme, phone frame, presenter controls)
 
-- [x] 6. Wire mock data fallback and end-to-end flow
-  - [x] 6.1 Implement mock message playback with realistic timing
-  - [x] 6.2 Wire speech service calls in Voice Mode flow
+- [x] 6. Mock data and speech wiring
+  - [x] 6.1 Mock message playback with timing
+  - [x] 6.2 Voice mode speech calls
 
-- [x] 7. Add PersonDetector callback props
-  - [x] 7.1 Add onPersonDetected callback prop
-  - [x] 7.2 Add onStatusChange callback prop
-  - [x] 7.3 Add onAudioTrack callback prop
+- [x] 7. PersonDetector callback props
+  - [x] 7.1 onPersonDetected (count transitions only)
+  - [x] 7.2 onStatusChange
+  - [x] 7.3 onAudioTrack
 
-- [x] 8. Embed PersonDetector and add auto-trigger logic
-  - [x] 8.1 Embed PersonDetector in AccessDropScreen with side-by-side layout
-  - [x] 8.2 Implement auto-trigger debounce logic (2s default)
-  - [x] 8.3 Implement onStatusChange handler
-  - [x] 8.4 Add detection status indicator with ARIA labels
-  - [x] 8.5 Wire WHEP audio track to transcription service
-  - [x] 8.6 Ensure PersonDetector cleanup on unmount
+- [x] 8. Auto-trigger and transcription
+  - [x] 8.1 Embed PersonDetector with side-by-side layout
+  - [x] 8.2 Auto-trigger debounce (2s, phaseRef for stale closure safety)
+  - [x] 8.3 Detection status indicator with ARIA labels
+  - [x] 8.4 Transcription from WHEP audio (only when phase is active, guard ref)
+  - [x] 8.5 Transcription restart on stream reconnect
+  - [x] 8.6 Cleanup on unmount
 
-- [x] 9. Add WebRTC auto-reconnect
-  - [x] 9.1 Add auto-reconnect with 3 retries and exponential backoff
-  - [x] 9.2 Clean up previous connection before retry
+- [x] 9. WebRTC resilience
+  - [x] 9.1 Auto-reconnect (3 retries, 2s/4s/6s delays)
+  - [x] 9.2 Connection cleanup before retry
 
-- [x] 10. Add phone frame UI and layout styles
-  - [x] 10.1 Add phone frame CSS (notch, screen, home indicator)
-  - [x] 10.2 Add side-by-side layout (controls left, stream right)
-  - [x] 10.3 Add detection status badge styles
+- [x] 10. Performance optimisation
+  - [x] 10.1 320x240 offscreen canvas for COCO-SSD inference
+  - [x] 10.2 3-second detection interval
+  - [x] 10.3 Scaled bounding box drawing
 
-- [x] 11. Write property-based tests
-  - [x] 11.1 Extract testable debounce logic into autoTriggerLogic.js
-  - [x] 11.2 Property test: Detection callback fires on count transitions
-  - [x] 11.3 Property test: Debounce guards auto-trigger timing
-  - [x] 11.4 Property test: Auto-trigger respects delivery phase
+- [x] 11. UI polish
+  - [x] 11.1 Phone frame (notch, screen, home indicator)
+  - [x] 11.2 Dark navy/blue theme with glowing borders
+  - [x] 11.3 Presenter controls below stream (trigger, mock toggle, reset)
+  - [x] 11.4 Removed history chart and header from embedded PersonDetector
+
+- [x] 12. Property-based tests
+  - [x] 12.1 autoTriggerLogic.js pure helpers
+  - [x] 12.2 Property: Detection callback on count transitions
+  - [x] 12.3 Property: Debounce guards timing
+  - [x] 12.4 Property: Auto-trigger respects phase
 
 ## Notes
 
-- deliveryFlowEngine.js is unchanged; existing TRIGGER_DOORSTEP action handles triggers correctly
-- PersonDetector manages its own WHEP lifecycle independently of delivery state
-- Manual trigger button retained as fallback
-- Amazon Polly is the only TTS provider (no Web Speech API fallback)
-- All 46 tests pass across 4 test files
+- 46 tests pass across 4 test files
+- deliveryFlowEngine unchanged except CONFIRM_SAFE_PLACE now completes delivery
+- Messages use "customer" sender (not "system" or "varun")
+- Polly is the only TTS provider
+- Detection uses offscreen 320x240 canvas at 3s intervals for performance
+- Transcription only starts when phase is active, with duplicate prevention

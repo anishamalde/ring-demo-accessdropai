@@ -2,9 +2,9 @@
 
 ## Overview
 
-AccessDrop AI adds an accessibility-focused delivery interaction screen to the Ring AVA Explorer app. It provides Text Mode (courier speech as text with tap-based actions) for deaf/hard-of-hearing customers and Voice Mode (spoken guidance via Amazon Polly) for blind/low-vision customers. The system embeds a PersonDetector component with COCO-SSD person detection to automatically trigger the delivery flow, extracts audio from the WHEP WebRTC stream for Amazon Transcribe speech-to-text, and uses Amazon Polly for text-to-speech. A mock data fallback ensures reliable demos when AWS services are unavailable.
+AccessDrop AI adds an accessibility-focused delivery interaction screen to the Ring AVA Explorer app. Text Mode displays courier speech as text with action buttons for deaf/hard-of-hearing customers. Voice Mode provides spoken guidance via Amazon Polly for blind/low-vision customers. The system embeds PersonDetector with COCO-SSD for automatic delivery triggering, extracts WHEP audio for Amazon Transcribe, and uses a mock fallback when AWS services are unavailable.
 
-The UI uses a side-by-side layout: delivery controls in a phone-shaped frame on the left, live video stream on the right.
+The UI is a side-by-side layout: phone-framed delivery controls on the left, live video stream on the right, with presenter controls (trigger, mock toggle, reset) below the stream.
 
 ## Architecture
 
@@ -12,7 +12,6 @@ The UI uses a side-by-side layout: delivery controls in a phone-shaped frame on 
 graph TB
     subgraph Browser["Browser (React + Vite)"]
         App["App.jsx (view switcher)"]
-        Explorer["Explorer View (existing)"]
         AD["AccessDropScreen"]
 
         AD --> TM["TextModePanel"]
@@ -20,22 +19,19 @@ graph TB
         AD --> DF["deliveryFlowEngine (useReducer)"]
         AD --> PD["PersonDetector (embedded)"]
 
-        PD -->|"onPersonDetected(count)"| AutoTrigger["Auto-Trigger (debounce)"]
+        PD -->|"onPersonDetected(count)"| AutoTrigger["Auto-Trigger (2s debounce)"]
         PD -->|"onAudioTrack(track)"| TS["TranscriptionService"]
         PD -->|"onStatusChange(status)"| StatusIndicator["Detection Status"]
         AutoTrigger -->|"dispatch TRIGGER_DOORSTEP"| DF
 
-        TM --> TS
-        VM --> SS["SpeechService (Polly)"]
-
         TS -->|"audio via WebSocket"| Proxy
+        VM --> SS["SpeechService (Polly)"]
         SS -->|"POST /tts"| Proxy
     end
 
-    subgraph PD_Internal["PersonDetector Internals"]
+    subgraph PD_Internal["PersonDetector"]
         WHEP["WHEP Stream"]
-        COCO["COCO-SSD Detection"]
-        Canvas["Bounding Box Canvas"]
+        COCO["COCO-SSD (320x240 offscreen)"]
         Reconnect["Auto-Reconnect (3 retries)"]
     end
 
@@ -46,149 +42,89 @@ graph TB
     end
 ```
 
-Key architectural decisions:
+Key decisions:
 
-1. View switching via React state in App.jsx (no router for MVP)
-2. PersonDetector embedded as child of AccessDropScreen, managing its own WHEP lifecycle
-3. Auto-trigger debounce logic in AccessDropScreen using useRef/useCallback, keeping deliveryFlowEngine pure
-4. Audio track exposed from PersonDetector via onAudioTrack callback for transcription
-5. WebRTC auto-reconnect with 3 retries and exponential backoff in PersonDetector
-6. AWS calls proxied through Express server to keep credentials server-side
-7. Delivery controls wrapped in a phone-frame CSS component for demo presentation
-8. Mock data fallback is automatic on AWS failure, with manual toggle
+1. View switching via React state (no router for MVP)
+2. PersonDetector manages its own WHEP lifecycle independently
+3. Detection runs on 320x240 offscreen canvas every 3 seconds to avoid blocking the main thread
+4. Auto-trigger debounce in AccessDropScreen using useRef/useCallback, keeping deliveryFlowEngine pure
+5. Audio track exposed via onAudioTrack callback; transcription only starts when phase is active
+6. Transcription guard ref prevents duplicate sessions; restarts on stream reconnect
+7. CONFIRM_SAFE_PLACE transitions directly to completed phase
+8. Presenter controls (trigger, mock, reset) live outside the phone frame, below the stream
+9. System messages use "customer" as sender label
 
-## Components and Interfaces
+## Components
 
 ### PersonDetector.jsx
-
-Props:
-```typescript
-interface PersonDetectorProps {
-  deviceId: string;
-  accessToken: string;
-  onLog?: (msg: string) => void;
-  onPersonDetected?: (count: number) => void;
-  onStatusChange?: (status: 'idle' | 'connecting' | 'live' | 'error') => void;
-  onAudioTrack?: (track: MediaStreamTrack) => void;
-}
-```
-
-Features:
+Props: `{ deviceId, accessToken, onLog, onPersonDetected, onStatusChange, onAudioTrack }`
 - WHEP stream with auto-reconnect (3 attempts, 2s/4s/6s delays)
-- COCO-SSD person detection every 1 second
-- Bounding box canvas overlay
-- Callbacks fire on count transitions, status changes, and audio track arrival
-- Independent lifecycle from delivery state
+- COCO-SSD on 320x240 offscreen canvas every 3 seconds
+- Bounding boxes scaled to visible canvas
+- Callbacks on count transitions, status changes, audio track arrival
 
 ### AccessDropScreen.jsx
-
 Props: `{ deviceId, accessToken, onBack, onLog }`
-
-State:
-- `deliveryState` via useReducer with deliveryFlowEngine
-- `detectorStatus`, `autoTriggerPending` for detection UI
-- `audioTrackRef` for WHEP audio track
-- `phaseRef` to avoid stale closures in debounce timer
-- `DEBOUNCE_MS = 2000`
-
-Layout: Side-by-side with phone frame (left) and stream (right)
+- useReducer with deliveryFlowEngine
+- Phone frame layout with detection status, mode selector, status bar, panels
+- Auto-trigger with 2s debounce using phaseRef to avoid stale closures
+- tryStartTranscription with transcribingRef guard (only when phase === 'active')
+- Audio track restart on reconnect
 
 ### TextModePanel.jsx
-- Scrollable message panel, action buttons (Confirm Safe Place, OTP Help, Mark as Received)
-- Props: `{ messages, deliveryState, onAction }`
+- Scrollable messages, stacked full-width action buttons
+- Sender labels: courier, customer
 
 ### VoiceModePanel.jsx
-- Speaking indicator, delivery status, parcel location, action buttons
-- Props: `{ deliveryState, isSpeaking, parcelLocation, onAction }`
+- Speaking indicator, status, location display
+- "Where is my parcel?" shows location or the question itself if unconfirmed
 
 ### DeliveryStatusBar.jsx
-- Phase indicator (idle/active/completed) with ARIA labels
+- Phase indicator with ARIA labels
 
-### Service Layer
+### deliveryFlowEngine.js
+- Pure state machine: idle -> active -> completed
+- CONFIRM_SAFE_PLACE transitions to completed
+- Messages use "customer" sender
 
-- **transcriptionService.js**: WebSocket to proxy, PCM audio extraction from MediaStreamTrack
-- **speechService.js**: POST to proxy /api/accessdrop/tts, plays MP3 via AudioContext. Polly only, no Web Speech API fallback.
-- **deliveryFlowEngine.js**: Pure state machine (idle -> active -> completed)
-- **autoTriggerLogic.js**: Pure helper functions for property-based testing
-- **mockData.js**: Predefined courier message sequences
-
-### Proxy Endpoints
-
-- **POST /api/accessdrop/tts**: Polly SynthesizeSpeech, returns MP3
-- **WebSocket /ws/transcribe**: PCM audio -> Transcribe Streaming -> JSON results
+### autoTriggerLogic.js
+- Pure helpers for property-based testing
 
 ## Data Models
 
 ### DeliveryState
 ```javascript
-{
-  phase: 'idle' | 'active' | 'completed',
-  mode: 'text' | 'voice',
-  messages: [],
-  parcelLocation: null,
-  otpCode: null,
-  safePlace: null,
-  startedAt: null,
-  completedAt: null,
-  useMockData: false,
-  error: null,
-}
+{ phase, mode, messages, parcelLocation, otpCode, safePlace, startedAt, completedAt, useMockData, error }
 ```
 
-### DeliveryAction Types
-TRIGGER_DOORSTEP, ADD_MESSAGE, CONFIRM_SAFE_PLACE, REQUEST_OTP, MARK_RECEIVED, ACKNOWLEDGE_DELIVERY, SET_MODE, SET_MOCK_MODE, SET_ERROR, RESET
+### Actions
+TRIGGER_DOORSTEP, ADD_MESSAGE, CONFIRM_SAFE_PLACE (-> completed), REQUEST_OTP, MARK_RECEIVED, ACKNOWLEDGE_DELIVERY, SET_MODE, SET_MOCK_MODE, SET_ERROR, RESET
 
 ## Correctness Properties
 
-### Property 1: Doorstep trigger transitions idle to active
-*For any* idle state, TRIGGER_DOORSTEP SHALL produce active state with non-null startedAt.
-
-### Property 2: Mode switching preserves other state
-*For any* state and target mode, SET_MODE SHALL only change mode, leaving all other fields unchanged.
-
-### Property 3: Messages maintain chronological order
-*For any* sequence of ADD_MESSAGE actions, messages SHALL be ordered by timestamp with correct count.
-
-### Property 4: Confirm safe place updates state correctly
-*For any* active state and location string, CONFIRM_SAFE_PLACE SHALL set parcelLocation and add a system message.
-
-### Property 5: OTP request adds OTP message
-*For any* active state, REQUEST_OTP SHALL add an OTP system message and set otpCode.
-
-### Property 6: Completion actions transition to completed
-*For any* active state, MARK_RECEIVED or ACKNOWLEDGE_DELIVERY SHALL produce completed state with non-null completedAt.
-
-### Property 7: Action validity depends on phase
-Invalid actions for the current phase SHALL return state unchanged.
-
-### Property 8: Detection callback fires on count transitions
-*For any* sequence of detection counts, onPersonDetected SHALL fire exactly once per transition.
-
-### Property 9: Debounce guards auto-trigger timing
-TRIGGER_DOORSTEP SHALL dispatch only if person count remains >= 1 for the full debounce period.
-
-### Property 10: Auto-trigger respects delivery phase
-Auto-trigger SHALL only dispatch when phase is idle.
+1. Doorstep trigger: idle -> active with startedAt
+2. Mode switching preserves other state
+3. Messages maintain chronological order
+4. Confirm safe place: sets location, adds message, transitions to completed
+5. OTP request adds OTP message
+6. Completion actions: active -> completed with completedAt
+7. Action validity depends on phase
+8. Detection callback fires on count transitions
+9. Debounce guards auto-trigger timing
+10. Auto-trigger respects delivery phase
 
 ## Error Handling
 
-- **WHEP failures**: PersonDetector auto-reconnects (3 attempts). Manual trigger remains as fallback.
-- **Transcription failures**: Auto-switch to mock data mode.
-- **Polly failures**: Silent no-op with console warning. No Web Speech API fallback.
-- **Invalid state transitions**: deliveryFlowEngine ignores invalid actions for current phase.
-- **Audio track timing**: If track not available at trigger time, transcription starts when track arrives.
+- WHEP failures: auto-reconnect 3 times, manual trigger as fallback
+- Transcription failures: auto-switch to mock mode
+- Polly failures: silent no-op
+- Invalid state transitions: ignored by reducer
+- Audio track timing: transcription starts when track arrives if phase is active
+- Duplicate transcription: prevented by transcribingRef guard
 
-## Testing Strategy
+## Testing
 
-### Property-Based Tests (fast-check, 100+ iterations each)
-- Properties 1-7: deliveryFlowEngine state machine (deliveryFlowEngine.test.js)
-- Properties 8-10: auto-trigger logic (autoTriggerLogic.test.js)
-
-### Unit Tests
-- Component rendering, ARIA labels, keyboard navigation
-- Mock data fallback, mode switching, action button states
-- Detection status indicator states
-
-### Test Configuration
+- 46 tests across 4 files, all passing
+- Property-based tests (fast-check, 100+ iterations): autoTriggerLogic
+- Unit tests: DeliveryStatusBar, TextModePanel, VoiceModePanel
 - Vitest + React Testing Library + fast-check
-- Timer mocking via vi.useFakeTimers() for debounce tests

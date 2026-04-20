@@ -45,7 +45,8 @@ describe('VoiceModePanel', () => {
 
   it('shows not-yet-confirmed message when no parcel location', () => {
     render(<VoiceModePanel deliveryState={activeState} isSpeaking={false} parcelLocation={null} onAction={() => {}} />);
-    expect(screen.getByText('Where is my parcel?')).toBeInTheDocument();
+    const locationDisplay = screen.getByRole('status', { name: /where is my parcel/i });
+    expect(locationDisplay).toBeInTheDocument();
   });
 
   it('renders both action buttons', () => {
