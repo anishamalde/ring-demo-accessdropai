@@ -80,7 +80,7 @@ export function deliveryReducer(state, action) {
     case 'CONFIRM_SAFE_PLACE': {
       const systemMsg = {
         id: `sys-safe-${Date.now()}`,
-        sender: 'varun',
+        sender: 'customer',
         text: `Safe place confirmed: ${action.location}`,
         timestamp: Date.now(),
         isFinal: true,
@@ -99,7 +99,7 @@ export function deliveryReducer(state, action) {
       const otp = generateOtp();
       const otpMsg = {
         id: `sys-otp-${Date.now()}`,
-        sender: 'varun',
+        sender: 'customer',
         text: `Your OTP code is: ${otp}`,
         timestamp: Date.now(),
         isFinal: true,

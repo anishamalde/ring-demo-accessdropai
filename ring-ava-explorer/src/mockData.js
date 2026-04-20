@@ -10,7 +10,7 @@
  * Returns a mock array of messages simulating a full delivery conversation.
  *
  * Each message: { id, sender, text, timestamp, type }
- *   sender: 'courier' | 'customer' | 'varun'
+ *   sender: 'courier' | 'customer'
  *   type: 'greeting' | 'safe-place' | 'otp' | 'delivery-confirmation' | 'info'
  *
  * Timestamps are spaced a few seconds apart so timed playback feels natural.
@@ -31,7 +31,7 @@ export function getMockMessages() {
     },
     {
       id: 'mock-2',
-      sender: 'varun',
+      sender: 'customer',
       text: 'Person detected at doorstep. Delivery interaction started.',
       timestamp: base + 2000,
       type: 'info',
@@ -61,7 +61,7 @@ export function getMockMessages() {
     },
     {
       id: 'mock-6',
-      sender: 'varun',
+      sender: 'customer',
       text: 'Safe place confirmed: Front porch, behind the plant pot.',
       timestamp: base + 14000,
       type: 'safe-place',
@@ -77,7 +77,7 @@ export function getMockMessages() {
     },
     {
       id: 'mock-8',
-      sender: 'varun',
+      sender: 'customer',
       text: 'Your OTP code is: 482916',
       timestamp: base + 21000,
       type: 'otp',
@@ -107,7 +107,7 @@ export function getMockMessages() {
     },
     {
       id: 'mock-12',
-      sender: 'varun',
+      sender: 'customer',
       text: 'Delivery completed successfully.',
       timestamp: base + 35000,
       type: 'delivery-confirmation',

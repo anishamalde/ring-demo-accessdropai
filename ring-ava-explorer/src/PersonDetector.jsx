@@ -3,7 +3,7 @@ import * as tf from '@tensorflow/tfjs';
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
 import { startWhepSession, closeWhepSession } from './api';
 
-const DETECT_INTERVAL_MS = 2000; // run detection every 2 seconds (reduces main thread load)
+const DETECT_INTERVAL_MS = 3000; // run detection every 3 seconds (reduces main thread load)
 const MAX_RECONNECT_ATTEMPTS = 3;
 const RECONNECT_DELAY_MS = 2000;
 
@@ -18,6 +18,7 @@ export default function PersonDetector({ deviceId, accessToken, onLog, onPersonD
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const detectCanvasRef = useRef(null);
   const pcRef = useRef(null);
   const sessionUrlRef = useRef(null);
   const detectIntervalRef = useRef(null);
@@ -174,21 +175,24 @@ export default function PersonDetector({ deviceId, accessToken, onLog, onPersonD
     }, delay);
   }, [startStream, onStatusChange, log]);
 
-  // Run detection on a single frame
+  // Run detection on a single frame using a small offscreen canvas for inference
   const detectFrame = useCallback(async (activeModel) => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas || !activeModel || video.readyState < 2) return;
 
-    const ctx = canvas.getContext('2d');
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
+    // Use a small offscreen canvas for COCO-SSD inference (much faster)
+    if (!detectCanvasRef.current) {
+      detectCanvasRef.current = document.createElement('canvas');
+    }
+    const detectCanvas = detectCanvasRef.current;
+    detectCanvas.width = 320;
+    detectCanvas.height = 240;
+    const detectCtx = detectCanvas.getContext('2d');
+    detectCtx.drawImage(video, 0, 0, 320, 240);
 
-    // Draw current frame
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    // Run COCO-SSD detection
-    const predictions = await activeModel.detect(canvas);
+    // Run COCO-SSD on the small canvas
+    const predictions = await activeModel.detect(detectCanvas);
 
     // Filter for persons only
     const persons = predictions.filter((p) => p.class === 'person' && p.score > 0.5);
@@ -200,7 +204,17 @@ export default function PersonDetector({ deviceId, accessToken, onLog, onPersonD
     }
     prevCountRef.current = count;
 
-    // Draw bounding boxes
+    // Draw bounding boxes on the visible canvas, scaled up from 320x240
+    const displayW = video.videoWidth || 640;
+    const displayH = video.videoHeight || 480;
+    canvas.width = displayW;
+    canvas.height = displayH;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, displayW, displayH);
+
+    const scaleX = displayW / 320;
+    const scaleY = displayH / 240;
+
     ctx.strokeStyle = '#00ff88';
     ctx.lineWidth = 2;
     ctx.font = '14px monospace';
@@ -208,8 +222,9 @@ export default function PersonDetector({ deviceId, accessToken, onLog, onPersonD
 
     persons.forEach((p) => {
       const [x, y, w, h] = p.bbox;
-      ctx.strokeRect(x, y, w, h);
-      ctx.fillText(`person ${Math.round(p.score * 100)}%`, x, y > 16 ? y - 4 : y + 16);
+      ctx.strokeRect(x * scaleX, y * scaleY, w * scaleX, h * scaleY);
+      const labelY = y * scaleY;
+      ctx.fillText(`person ${Math.round(p.score * 100)}%`, x * scaleX, labelY > 16 ? labelY - 4 : labelY + 16);
     });
   }, [onPersonDetected]);
 

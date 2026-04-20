@@ -4,7 +4,7 @@ import TextModePanel from './TextModePanel';
 
 const mockMessages = [
   { id: 'msg-1', sender: 'courier', text: 'Hello, I have a parcel for you.', timestamp: 1700000000000 },
-  { id: 'msg-2', sender: 'varun', text: 'Safe place confirmed: Front porch', timestamp: 1700000005000 },
+  { id: 'msg-2', sender: 'customer', text: 'Safe place confirmed: Front porch', timestamp: 1700000005000 },
 ];
 
 const idleState = { phase: 'idle', mode: 'text', messages: [], parcelLocation: null, otpCode: null, safePlace: null, startedAt: null, completedAt: null, useMockData: false, error: null };
