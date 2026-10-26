@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"vite\" \"node proxy-server.js\"",
+    "dev": "concurrently \"vite\" \"node --env-file-if-exists=.env proxy-server.js\"",
     "dev:client": "vite",
-    "dev:proxy": "node proxy-server.js",
+    "dev:proxy": "node --env-file-if-exists=.env proxy-server.js",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest --run"

@@ -8,13 +8,15 @@ import {
 } from '@aws-sdk/client-transcribe-streaming';
 
 const app = express();
-const PORT = 3001;
+const PORT = Number(process.env.PROXY_PORT) || 3001;
 // Loopback only: this proxy uses your local AWS credentials, so keep it off the network
 const HOST = process.env.PROXY_HOST || '127.0.0.1';
-const ALLOWED_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173'];
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173')
+  .split(',')
+  .map((o) => o.trim());
 
-const RING_API = 'https://api.amazonvision.com';
-const RING_OAUTH = 'https://oauth.ring.com';
+const RING_API = process.env.RING_API_BASE_URL || 'https://api.amazonvision.com';
+const RING_OAUTH = process.env.RING_OAUTH_URL || 'https://oauth.ring.com';
 
 app.use(cors({ origin: ALLOWED_ORIGINS, exposedHeaders: ['location', 'x-media-timestamp', 'x-media-length'] }));
 app.use(express.urlencoded({ extended: true }));

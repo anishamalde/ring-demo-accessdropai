@@ -1,7 +1,7 @@
 // Ring AVA API client
 // All requests go through the local proxy to avoid CORS issues.
 
-const PROXY = 'http://localhost:3001';
+import { PROXY_URL as PROXY, RING_API_BASE_URL } from './env';
 
 export async function refreshToken(refreshToken, clientId, clientSecret) {
   const res = await fetch(`${PROXY}/oauth/oauth/token`, {
@@ -72,7 +72,7 @@ export async function startWhepSession(deviceId, sdpOffer, accessToken) {
 export async function closeWhepSession(sessionUrl, accessToken) {
   // sessionUrl is the full URL from the Location header.
   // Route it through our proxy by replacing the Ring base with /api.
-  const proxyPath = sessionUrl.replace('https://api.amazonvision.com', `${PROXY}/api`);
+  const proxyPath = sessionUrl.replace(RING_API_BASE_URL, `${PROXY}/api`);
   const res = await fetch(proxyPath, {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${accessToken}` },

@@ -6,7 +6,7 @@
  * If Polly is unavailable, speak() resolves silently with a console warning.
  */
 
-const PROXY = 'http://localhost:3001';
+import { PROXY_URL as PROXY } from './env';
 
 let audioContext = null;
 let currentSource = null;

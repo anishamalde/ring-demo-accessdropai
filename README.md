@@ -92,7 +92,7 @@ You'll need Node 18+, Ring AVA partner credentials, and AWS credentials with acc
 ```bash
 cd ring-ava-explorer
 npm install
-cp config.example.js config.js   # add your Ring AVA tokens and partner credentials
+cp .env.example .env   # add your Ring AVA tokens and partner credentials
 npm run dev
 ```
 
@@ -100,7 +100,7 @@ This starts Vite on `http://localhost:5173` and the proxy on `http://127.0.0.1:3
 
 The proxy only listens on loopback and only accepts requests from the Vite dev origin, because it uses your local AWS credentials. Keep it that way.
 
-`config.js` is gitignored. Never commit real credentials.
+All Ring endpoints, credentials and proxy settings live in `.env` (see `.env.example`), which is gitignored. Never commit real credentials. Note that `VITE_*` values are bundled into the browser code, so this setup is for local development only.
 
 ### Tests
 

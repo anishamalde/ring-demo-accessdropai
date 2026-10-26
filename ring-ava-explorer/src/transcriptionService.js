@@ -11,7 +11,9 @@
  *   { type: 'error', message }
  */
 
-const WS_URL = 'ws://localhost:3001/ws/transcribe';
+import { PROXY_URL } from './env';
+
+const WS_URL = `${PROXY_URL.replace(/^http/, 'ws')}/ws/transcribe`;
 
 // PCM capture settings — 16 kHz mono is what Amazon Transcribe expects.
 const SAMPLE_RATE = 16000;

@@ -4,16 +4,11 @@ import LiveStream from './LiveStream';
 import PersonDetector from './PersonDetector';
 import ClipDownloader from './ClipDownloader';
 import AccessDropScreen from './AccessDropScreen';
-import { CONFIG } from '../config.js';
+import { RING_CREDENTIALS } from './env';
 
 function App() {
   const [view, setView] = useState('explorer');
-  const [creds, setCreds] = useState({
-    accessToken: CONFIG.accessToken || '',
-    refreshToken: CONFIG.refreshToken || '',
-    clientId: CONFIG.clientId || '',
-    clientSecret: CONFIG.clientSecret || '',
-  });
+  const [creds, setCreds] = useState(RING_CREDENTIALS);
   const [devices, setDevices] = useState(null);
   const [selectedDevice, setSelectedDevice] = useState(null);
   const [deviceDetail, setDeviceDetail] = useState(null);
