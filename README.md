@@ -4,9 +4,12 @@
 
 > **Hackathon submission.** This repo is a hackathon MVP, built and demoed over a short hackathon window. It's a working prototype, not production code. Some service paths are mocked or simplified for demo reliability (see [Built vs mocked](#built-vs-mocked)).
 
-## Demo video
+## Demo videos
 
-[Watch the AccessDrop AI demo](https://github.com/anishamalde/ring-demo-accessdropai/releases/download/hackathon-demo/accessdrop-ai-demo.mp4)
+- [Text Mode demo](https://github.com/anishamalde/ring-demo-accessdropai/releases/download/hackathon-demo/accessdrop-text-mode.mov): courier speech transcribed into readable messages for a deaf or hard-of-hearing customer
+- [Voice Mode demo](https://github.com/anishamalde/ring-demo-accessdropai/releases/download/hackathon-demo/accessdrop-voice-mode.mov): spoken delivery guidance for a blind or low-vision customer
+
+Both videos are also on the [hackathon-demo release](https://github.com/anishamalde/ring-demo-accessdropai/releases/tag/hackathon-demo).
 
 ## Why this exists
 
