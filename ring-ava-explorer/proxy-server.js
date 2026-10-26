@@ -9,11 +9,14 @@ import {
 
 const app = express();
 const PORT = 3001;
+// Loopback only: this proxy uses your local AWS credentials, so keep it off the network
+const HOST = process.env.PROXY_HOST || '127.0.0.1';
+const ALLOWED_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173'];
 
 const RING_API = 'https://api.amazonvision.com';
 const RING_OAUTH = 'https://oauth.ring.com';
 
-app.use(cors({ exposedHeaders: ['location', 'x-media-timestamp', 'x-media-length'] }));
+app.use(cors({ origin: ALLOWED_ORIGINS, exposedHeaders: ['location', 'x-media-timestamp', 'x-media-length'] }));
 app.use(express.urlencoded({ extended: true }));
 
 // Parse JSON for most routes, but leave WHEP/SDP routes as raw text
@@ -138,7 +141,7 @@ app.all('/oauth/*', async (req, res) => {
   }
 });
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, HOST, () => {
   console.log(`Ring AVA proxy running on http://localhost:${PORT}`);
   console.log(`  API proxy:   http://localhost:${PORT}/api/v1/...`);
   console.log(`  OAuth proxy: http://localhost:${PORT}/oauth/...`);
@@ -146,7 +149,11 @@ const server = app.listen(PORT, () => {
 });
 
 // --- WebSocket: /ws/transcribe ---
-const wss = new WebSocketServer({ server, path: '/ws/transcribe' });
+const wss = new WebSocketServer({
+  server,
+  path: '/ws/transcribe',
+  verifyClient: ({ origin }) => ALLOWED_ORIGINS.includes(origin),
+});
 
 wss.on('connection', (ws) => {
   console.log('[transcribe] Client connected');
