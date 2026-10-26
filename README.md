@@ -6,7 +6,7 @@
 
 ## Demo video
 
-[Watch the AccessDrop AI demo](https://github.com/anishamalde/ring-demo/releases/download/hackathon-demo/accessdrop-ai-demo.mp4)
+[Watch the AccessDrop AI demo](https://github.com/anishamalde/ring-demo-accessdropai/releases/download/hackathon-demo/accessdrop-ai-demo.mp4)
 
 ## Why this exists
 
